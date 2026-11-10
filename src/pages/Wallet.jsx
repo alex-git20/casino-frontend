@@ -4,6 +4,7 @@ import api from '../api/axios'; // Importamos nuestro cartero automático
 import './Wallet.css';
 import DepositModal from '../components/DepositModal'; 
 import WithdrawModal from '../components/WithdrawModal';
+import TransactionHistory from '../components/TransactionHistory';
 
 const Wallet = () => {
   const navigate = useNavigate();
@@ -77,6 +78,8 @@ const Wallet = () => {
             </div>
             <p>Créditos de regalo sujetos a requisitos de apuesta (Rollover).</p>
           </div>
+
+          <TransactionHistory />
         </div> 
       </main>
 
