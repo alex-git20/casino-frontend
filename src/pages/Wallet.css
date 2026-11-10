@@ -1,0 +1,134 @@
+/* Wallet.css */
+.wallet-wrapper {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #2a2d34 0%, #121418 100%);
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #f8f9fa;
+}
+
+.wallet-nav {
+  display: flex;
+  align-items: center;
+  padding: 1.2rem 2rem;
+  background: rgba(30, 32, 38, 0.95);
+  border-bottom: 1px solid #c5a059;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  gap: 2rem;
+}
+
+.btn-back {
+  background: transparent;
+  color: #adb5bd;
+  border: 1px solid #495057;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+  color: #f8f9fa;
+  border-color: #f8f9fa;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.wallet-content {
+  padding: 3rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.balances-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.balance-card {
+  background: rgba(30, 32, 38, 0.8);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Detalles dorados para el saldo principal */
+.real-balance {
+  border: 1px solid #c5a059;
+}
+
+.real-balance::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, #d4af37, #aa8529);
+}
+
+/* Detalles plateados/azules para el bono */
+.bonus-balance {
+  border: 1px solid #495057;
+}
+
+.balance-card h3 {
+  color: #adb5bd;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+}
+
+.amount {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #f8f9fa;
+  margin-bottom: 1rem;
+}
+
+.real-balance .amount {
+  color: #c5a059;
+}
+
+.balance-card p {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.wallet-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-deposit, .btn-withdraw {
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.btn-deposit {
+  background: linear-gradient(135deg, #d4af37 0%, #aa8529 100%);
+  color: #121418;
+}
+
+.btn-deposit:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.btn-withdraw {
+  background: transparent;
+  color: #f8f9fa;
+  border: 1px solid #495057;
+}
+
+.btn-withdraw:hover {
+  border-color: #c5a059;
+  color: #c5a059;
+}

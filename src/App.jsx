@@ -5,6 +5,7 @@ import PrivateRoutes from './components/PrivateRoutes';
 // Componentes protegidos
 import Dashboard from './pages/Dashboard';
 import Roulette from './pages/Roulette';
+import Wallet from './pages/Wallet';
 
 function App() {
   return (
@@ -22,7 +23,7 @@ function App() {
           {/* Todas las rutas aquí adentro requerirán login */}
           { <Route path="/dashboard" element={<Dashboard />} /> }
           { <Route path="/roulette" element={<Roulette />} /> }
-          {/* <Route path="/wallet" element={<Wallet />} /> */}
+          { <Route path="/wallet" element={<Wallet />} /> }
         </Route>
         
         {/* Ruta 404 para URLs que no existen */}

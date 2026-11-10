@@ -12,6 +12,8 @@ const Register = () => {
   });
   
   const [successMsg, setSuccessMsg] = useState('');
+  // NUEVO: Estado para guardar errores de validación del frontend
+  const [validationError, setValidationError] = useState(''); 
   
   const navigate = useNavigate();
   const { register, isLoading, error } = useAuthStore();
@@ -21,36 +23,62 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Limpiamos el mensaje de error local si el usuario empieza a corregir
+    if (validationError) setValidationError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setValidationError(''); // Limpiar errores previos al intentar de nuevo
+
+    // 🛡️ 1. VALIDACIÓN FRONTAL: Contraseña
+    if (formData.password.length < 8) {
+      setValidationError('La contraseña debe tener al menos 8 caracteres.');
+      return; // Detiene la ejecución, no envía la petición al backend
+    }
+
+    // 🛡️ 2. VALIDACIÓN FRONTAL: Mayoría de edad
+    const fechaNac = new Date(formData.fecha_nacimiento);
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+    const mes = hoy.getMonth() - fechaNac.getMonth();
+    
+    if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+      edad--;
+    }
+
+    if (edad < 18) {
+      setValidationError('Debes ser mayor de 18 años para jugar en el casino.');
+      return; // Detiene la ejecución
+    }
+
+    // Si pasa nuestras validaciones locales, contactamos al servidor
     try {
-      // Enviamos el objeto completo con los 4 campos exactos que pide el backend
       await register(formData);
       
-      // Mostramos mensaje de éxito y redirigimos al login tras 2 segundos
       setSuccessMsg('¡Cuenta creada con éxito! Redirigiendo al login...');
       setTimeout(() => {
         navigate('/login');
       }, 2000);
       
     } catch (err) {
-      // Si hay error, Zustand ya lo capturó en la variable 'error'.
-      // Solo limpiamos la contraseña por seguridad.
       setFormData(prev => ({ ...prev, password: '' }));
     }
   };
+
+  // Variable auxiliar: Si hay un error local lo mostramos, si no, mostramos el del backend
+  const displayError = validationError || error;
 
   return (
     <div className="register-wrapper">
       <div className="register-card">
         <h2 className="register-title">Crear Cuenta</h2>
         
-        {error && (
+        {/* Mostramos displayError en lugar de solo error */}
+        {displayError && (
           <div className="error-alert">
             <span className="alert-icon">⚠️</span>
-            {error}
+            {displayError}
           </div>
         )}
 
