@@ -1,82 +1,74 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-// import api from '../api/axios'; // Listo para conectarse a tu backend
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
+import './Login.css'; // La hoja de estilos
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  
   const navigate = useNavigate();
+  const { login, isLoading, error } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
     try {
-      // Simulación de petición al backend. 
-      // Cuando tu módulo auth esté listo, reemplazaremos el setTimeout con:
-      // const response = await api.post('/auth/login', { email, password });
-      // localStorage.setItem('token', response.data.token);
-      
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Retraso simulado
-      
-      if (email && password) {
-        localStorage.setItem('token', 'jwt_simulado_temporal');
-        navigate('/dashboard');
-      } else {
-        setError('Por favor, ingresa correo y contraseña.');
-      }
+      await login(email, password);
+      navigate('/dashboard'); 
     } catch (err) {
-      setError(err.response?.data?.message || 'Error de credenciales');
-    } finally {
-      setIsLoading(false);
+      setPassword(''); // Limpiamos el campo por seguridad tras un fallo
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-900 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-gray-800 p-8 shadow-xl">
-        <h2 className="mb-6 text-center text-3xl font-bold text-white">Iniciar Sesión</h2>
+    <div className="login-wrapper">
+      <div className="login-card">
+        <h2 className="login-title">Bienvenido al Casino</h2>
         
         {error && (
-          <div className="mb-4 rounded bg-red-500/20 p-3 text-sm text-red-400 border border-red-500/50">
+          <div className="error-alert">
+            <span className="error-icon">⚠️</span>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-300">Correo Electrónico</label>
-            <input
-              type="email"
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="input-group">
+            <label htmlFor="email">Correo Electrónico</label>
+            <input 
+              id="email"
+              type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               placeholder="jugador@casino.com"
+              required 
+              disabled={isLoading}
+              className="casino-input"
             />
           </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-300">Contraseña</label>
-            <input
-              type="password"
+          
+          <div className="input-group">
+            <label htmlFor="password">Contraseña</label>
+            <input 
+              id="password"
+              type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-600 bg-gray-700 p-3 text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               placeholder="••••••••"
+              required 
+              disabled={isLoading}
+              className="casino-input"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-lg bg-emerald-500 p-3 font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
-          >
-            {isLoading ? 'Conectando...' : 'Entrar al Casino'}
+          <button type="submit" disabled={isLoading} className="btn-submit">
+            {isLoading ? 'Conectando...' : 'Iniciar Sesión'}
           </button>
         </form>
+
+        <p className="register-prompt">
+          ¿No tienes cuenta? <Link to="/register" className="register-link">Regístrate aquí</Link>
+        </p>
       </div>
     </div>
   );
