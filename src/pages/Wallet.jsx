@@ -1,43 +1,18 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/axios'; // Importamos nuestro cartero automático
 import './Wallet.css';
 import DepositModal from '../components/DepositModal'; 
 import WithdrawModal from '../components/WithdrawModal';
 import TransactionHistory from '../components/TransactionHistory';
+import { useWallet } from '../context/WalletContext';
 
 const Wallet = () => {
+  const { balances, isLoading, fetchWallet } = useWallet();
   const navigate = useNavigate();
-  const [balances, setBalances] = useState({ real: 0, bono: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+ 
   const [error, setError] = useState('');
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
-
-  // Función para consultar el saldo y refrescar saldos
-  const fetchWallet = async () => {
-    try {
-      setError('');
-      // Axios inyectará automáticamente el "Bearer <token>" aquí
-      const response = await api.get('/api/wallet/balance'); // Ruta de wallet para ver el saldo en el backend
-        
-      const walletData = response.data.data || response.data;
-        
-      setBalances({
-        real: walletData.saldo_real || 0,
-        bono: walletData.saldo_bono || 0
-      });
-    } catch (err) {
-      console.error("Error al obtener billetera:", err);
-      setError('No pudimos cargar tus saldos. Verifica la conexión con el casino.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchWallet();
-  }, []);
 
   return (
     <div className="wallet-wrapper">

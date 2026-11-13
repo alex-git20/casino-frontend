@@ -44,12 +44,24 @@ const TransactionHistory = () => {
     return <span className="badge badge-danger">Fallido / Rechazado</span>;
   };
 
-  const getTypeLabel = (type) => {
-    const t = String(type).toUpperCase();
-    if (t === 'DEPOSIT' || t === 'DEPOSITO') {
-      return <span className="tx-type type-deposit">📥 Depósito</span>;
-    }
-    return <span className="tx-type type-withdraw">📤 Retiro</span>;
+  const getTypeLabel = (tx) => {
+    const t = String(tx.tipo || tx.type || '').toUpperCase();
+    const isCredit = String(tx.naturaleza || '').toLowerCase() === 'credito' || t === 'DEPOSIT' || t === 'DEPOSITO' || t === 'PREMIO';
+
+    const labels = {
+      DEPOSIT: '📥 Depósito',
+      DEPOSITO: '📥 Depósito',
+      PREMIO: '🏆 Premio',
+      WITHDRAW: '📤 Retiro',
+      RETIRO: '📤 Retiro',
+      APUESTA: '🎲 Apuesta',
+    };
+
+    return (
+      <span className={`tx-type ${isCredit ? 'type-deposit' : 'type-withdraw'}`}>
+        {labels[t] || (isCredit ? '📥 Crédito' : '📤 Débito')}
+      </span>
+    );
   };
 
   return (
@@ -77,7 +89,7 @@ const TransactionHistory = () => {
               <tbody>
                 {transactions.map((tx, idx) => (
                   <tr key={tx.id_transaccion || tx.id || idx}>
-                    <td>{getTypeLabel(tx.tipo || tx.type)}</td>
+                    <td>{getTypeLabel(tx)}</td>
                     <td className="tx-amount">
                       ${Number(tx.monto || tx.amount || 0).toFixed(2)}
                     </td>

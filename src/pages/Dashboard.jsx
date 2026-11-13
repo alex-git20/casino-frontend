@@ -42,7 +42,9 @@ const Dashboard = () => {
             <div className="module-card">
               <h3>🎡 Ruleta</h3>
               <p>Haz tus apuestas y gira la rueda.</p>
-              <button className="btn-module disabled" disabled>Próximamente</button>
+              <button className="btn-submit" onClick={() => navigate('/roulette')} style={{ marginTop: '1rem', width: '100%' }}>
+                 Roulette
+              </button>
             </div>
           </div>
         </div>
