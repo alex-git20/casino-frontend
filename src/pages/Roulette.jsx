@@ -17,7 +17,7 @@ const styles = {
   chipInactive: "border-gray-500 bg-gray-700 hover:bg-gray-600",
   wheelOuter: "relative flex h-48 w-48 sm:h-64 sm:w-64 md:h-80 md:w-80 items-center justify-center rounded-full border-[8px] sm:border-[12px] md:border-[16px] border-[#3E2723] shadow-2xl",
   wheelPointer: "absolute -top-5 sm:-top-6 left-1/2 -translate-x-1/2 text-yellow-500 text-2xl sm:text-3xl md:text-4xl z-20 drop-shadow-md",
-  wheelInner: "absolute inset-0 rounded-full transition-transform duration-[2000ms]",
+  wheelInner: "absolute inset-0 rounded-full transition-transform duration-[3000ms] ease-out",
   isSpinning: "animate-[spin_0.3s_linear_infinite]",
   wheelCenter: "relative z-10 flex h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 flex-col items-center justify-center rounded-full border-[3px] sm:border-4 border-yellow-700 bg-gray-800 shadow-[inset_0_0_15px_black]",
   boardContainer: "select-none bg-green-800 p-1 sm:p-2 md:p-4 rounded-lg md:rounded-xl shadow-2xl w-full max-w-4xl border-2 sm:border-4 border-[#3E2723] mb-6",
@@ -40,6 +40,7 @@ const Roulette = () => {
   const [selectedBet, setSelectedBet] = useState(null);
   const [selectedChip, setSelectedChip] = useState(1); // Iniciamos en 1 porque apuesta_min en tu BD es 1.00
   const [errorMsg, setErrorMsg] = useState(null);
+  const [wheelRotation, setWheelRotation] = useState(0);
 
   const chips = [1, 5, 10, 25];
   const topRow = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36];
@@ -144,8 +145,21 @@ const Roulette = () => {
       // Extraemos el número ganador desde resultado (construirResultado devuelve { numero_ganador, color })
       const winningNumber = liquidacion?.resultado?.numero_ganador ?? liquidacion?.numero_ganador ?? 0;
 
-      // 5. Esperar animación y refrescar el WalletContext global
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+     // --- NUEVO: Cálculo de rotación exacta ---
+      const targetIndex = wheelNumbers.indexOf(Number(winningNumber));
+      const step = 360 / 37;
+      // Ángulo donde se dibujó ese número (negativo para llevarlo hacia arriba al puntero)
+      const targetAngle = (360 - (targetIndex * step)) % 360;
+      
+      setWheelRotation((prev) => {
+        const currentMod = prev % 360;
+        const delta = (targetAngle - currentMod + 360) % 360;
+        // Damos 5 vueltas completas (1800°) + el ajuste exacto al número ganador
+        return prev + 1800 + delta;
+      });
+
+      // 5. Esperar los 3 segundos que dura la transición CSS antes de mostrar el número en el centro
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       
       setLastNumber(winningNumber);
       await fetchWallet(); // Actualiza balances.real en toda la app (incluyendo el Header)
@@ -196,8 +210,11 @@ const Roulette = () => {
             <div className={styles.wheelPointer}>▼</div>
 
             <div 
-              className={`${styles.wheelInner} ${isSpinning ? styles.isSpinning : ''}`}
-              style={{ background: getWheelBackground() }}
+              className={styles.wheelInner}
+              style={{ 
+                background: getWheelBackground(),
+                transform: `rotate(${wheelRotation}deg)`
+              }}
             >
               {wheelNumbers.map((num, i) => (
                 <div 
