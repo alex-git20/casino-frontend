@@ -16,12 +16,6 @@ const Wallet = () => {
 
   return (
     <div className="wallet-wrapper">
-      <nav className="wallet-nav">
-        <button onClick={() => navigate('/dashboard')} className="btn-back">
-          ← Volver al Lobby
-        </button>
-        <h1 className="logo">💰 Mi Billetera</h1>
-      </nav>
 
       <main className="wallet-content">
         {error && (

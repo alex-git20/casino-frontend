@@ -41,6 +41,7 @@ const Roulette = () => {
   const [selectedChip, setSelectedChip] = useState(1); // Iniciamos en 1 porque apuesta_min en tu BD es 1.00
   const [errorMsg, setErrorMsg] = useState(null);
   const [wheelRotation, setWheelRotation] = useState(0);
+  const [roundResult, setRoundResult] = useState(null);
 
   const chips = [1, 5, 10, 25];
   const topRow = [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36];
@@ -101,18 +102,17 @@ const Roulette = () => {
     return { id_tipo_apuesta: tipoEncontrado.id_tipo_apuesta, seleccion };
   };
 
-  const handleSpin = async () => {
+ const handleSpin = async () => {
     if (selectedBet === null) return setErrorMsg('Selecciona una apuesta en el tablero');
     if (realBalance < selectedChip) return setErrorMsg('Saldo insuficiente');
     
     setErrorMsg(null);
+    setRoundResult(null); // Oculta cualquier popup anterior
     setIsSpinning(true);
     setLastNumber(null);
 
     try {
       const idJuego = 1;
-
-      // 1. Obtener tipos de apuesta de la BD y la ronda actual
       const [resTipos, resRonda] = await Promise.all([
         api.get(`/api/games/${idJuego}/tipos-apuesta`),
         api.get(`/api/games/${idJuego}/ronda-actual`)
@@ -121,16 +121,13 @@ const Roulette = () => {
       const tiposBD = resTipos.data?.data || [];
       let idRonda = resRonda.data?.data?.id_ronda;
 
-      // Si no hay ronda abierta, abrimos una
       if (!idRonda) {
         const resAbrir = await api.post('/api/games/rondas/abrir', { id_juego: idJuego });
         idRonda = resAbrir.data?.data?.id_ronda;
       }
 
-      // 2. Armar payload compatible con roulette.logic.js
       const { id_tipo_apuesta, seleccion } = construirPayloadApuesta(selectedBet, tiposBD);
 
-      // 3. Registrar la apuesta
       await api.post('/api/games/apuesta', {
         id_ronda: idRonda,
         id_tipo_apuesta,
@@ -138,31 +135,36 @@ const Roulette = () => {
         seleccion
       });
 
-      // 4. Cerrar y liquidar la ronda
       const resCerrar = await api.post('/api/games/rondas/cerrar', { id_ronda: idRonda });
       const liquidacion = resCerrar.data?.data;
 
-      // Extraemos el número ganador desde resultado (construirResultado devuelve { numero_ganador, color })
       const winningNumber = liquidacion?.resultado?.numero_ganador ?? liquidacion?.numero_ganador ?? 0;
+      const totalPagado = Number(liquidacion?.total_pagado || 0);
+      const ganoRonda = (liquidacion?.ganadas > 0) || totalPagado > 0;
 
-     // --- NUEVO: Cálculo de rotación exacta ---
+      // Cálculo de rotación exacta
       const targetIndex = wheelNumbers.indexOf(Number(winningNumber));
       const step = 360 / 37;
-      // Ángulo donde se dibujó ese número (negativo para llevarlo hacia arriba al puntero)
       const targetAngle = (360 - (targetIndex * step)) % 360;
       
       setWheelRotation((prev) => {
         const currentMod = prev % 360;
         const delta = (targetAngle - currentMod + 360) % 360;
-        // Damos 5 vueltas completas (1800°) + el ajuste exacto al número ganador
         return prev + 1800 + delta;
       });
 
-      // 5. Esperar los 3 segundos que dura la transición CSS antes de mostrar el número en el centro
+      // Esperamos los 3s de giro de la ruleta
       await new Promise((resolve) => setTimeout(resolve, 3000));
       
       setLastNumber(winningNumber);
-      await fetchWallet(); // Actualiza balances.real en toda la app (incluyendo el Header)
+      await fetchWallet();
+
+      // Disparar el popup animado
+      setRoundResult({
+        won: ganoRonda,
+        amount: ganoRonda ? totalPagado : selectedChip,
+        number: winningNumber
+      });
 
     } catch (error) {
       setErrorMsg(
@@ -177,13 +179,6 @@ const Roulette = () => {
 
   return (
     <div className={styles.container}>
-      <nav className={styles.navBar}>
-        <button onClick={() => navigate('/dashboard')} className={styles.btnBack}>
-          ← Volver al Lobby
-        </button>
-        <h1 className={styles.logoTitle}>Roulette</h1>
-        <div className="w-[120px] hidden sm:block"></div>
-      </nav>
 
       <main className={styles.mainContent}>
         {errorMsg && (
@@ -310,6 +305,121 @@ const Roulette = () => {
           </button>
         </div>
       </main>
+      {/* --- POPUP ANIMADO DE RESULTADO --- */}
+      {roundResult && (
+        <div 
+          onClick={() => setRoundResult(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+        >
+          <style>{`
+            @keyframes popIn {
+              0% { opacity: 0; transform: scale(0.5) translateY(30px); }
+              70% { opacity: 1; transform: scale(1.06) translateY(-4px); }
+              100% { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            @keyframes shakeCard {
+              0%, 100% { transform: translateX(0); }
+              20% { transform: translateX(-10px); }
+              40% { transform: translateX(10px); }
+              60% { transform: translateX(-6px); }
+              80% { transform: translateX(6px); }
+            }
+            @keyframes coinFall {
+              0% { transform: translateY(-40px) rotate(0deg); opacity: 1; }
+              100% { transform: translateY(320px) rotate(360deg); opacity: 0; }
+            }
+            .animate-pop-win { animation: popIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+            .animate-pop-lose { animation: popIn 0.35s ease-out forwards, shakeCard 0.45s ease-in-out 0.3s; }
+          `}</style>
+
+          {/* Partículas de monedas cayendo si ganó */}
+          {roundResult.won && (
+            <div className="pointer-events-none absolute inset-0 overflow-hidden flex justify-center">
+              {[...Array(14)].map((_, i) => (
+                <span
+                  key={i}
+                  className="absolute text-2xl sm:text-3xl select-none"
+                  style={{
+                    left: `${10 + (i * 6)}%`,
+                    top: '15%',
+                    animation: `coinFall ${1.2 + (i % 4) * 0.3}s ease-in ${i * 0.08}s infinite`
+                  }}
+                >
+                  {i % 2 === 0 ? '🪙' : '✨'}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Tarjeta del Popup */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`relative w-full max-w-sm rounded-2xl p-6 sm:p-8 text-center border-2 shadow-2xl ${
+              roundResult.won
+                ? 'bg-gradient-to-b from-gray-800 to-gray-900 border-yellow-400 shadow-yellow-500/30 animate-pop-win'
+                : 'bg-gradient-to-b from-gray-800 to-gray-900 border-red-500/70 shadow-red-900/40 animate-pop-lose'
+            }`}
+          >
+            {/* Ícono central con animación */}
+            <div className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full text-4xl shadow-lg ${
+              roundResult.won
+                ? 'bg-yellow-500/20 border-2 border-yellow-400 animate-bounce'
+                : 'bg-red-500/15 border-2 border-red-500/50'
+            }`}>
+              {roundResult.won ? '🏆' : '💔'}
+            </div>
+
+            {/* Título */}
+            <h2 className={`text-2xl sm:text-3xl font-black uppercase tracking-wider mb-1 ${
+              roundResult.won
+                ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-amber-500'
+                : 'text-red-400'
+            }`}>
+              {roundResult.won ? '¡Felicidades!' : 'Suerte la próxima'}
+            </h2>
+
+            {/* Número ganador */}
+            <p className="text-sm text-gray-300 mb-4">
+              La bola cayó en el número{' '}
+              <span className={`inline-block px-2 py-0.5 rounded font-bold text-white ${
+                roundResult.number === 0
+                  ? 'bg-emerald-600'
+                  : redNumbers.includes(roundResult.number)
+                  ? 'bg-red-600'
+                  : 'bg-black border border-gray-600'
+              }`}>
+                {roundResult.number}
+              </span>
+            </p>
+
+            {/* Monto ganado o perdido */}
+            <div className={`my-4 py-3 px-4 rounded-xl border ${
+              roundResult.won
+                ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-400'
+                : 'bg-red-950/40 border-red-800/50 text-red-300'
+            }`}>
+              <span className="block text-xs uppercase tracking-widest opacity-80">
+                {roundResult.won ? 'Premio acreditado' : 'Apuesta perdida'}
+              </span>
+              <span className="text-3xl font-extrabold">
+                {roundResult.won ? `+$${roundResult.amount.toFixed(2)}` : `-$${roundResult.amount.toFixed(2)}`}
+              </span>
+            </div>
+
+            {/* Botón para seguir jugando */}
+            <button
+              onClick={() => setRoundResult(null)}
+              className={`w-full py-3 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-105 ${
+                roundResult.won
+                  ? 'bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-gray-950'
+                  : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+            >
+              Seguir Jugando
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

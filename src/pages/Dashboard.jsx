@@ -16,13 +16,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-wrapper">
-      {/* Barra de navegación superior */}
-      <nav className="dashboard-nav">
-        <h1 className="logo">🎰 Casino Imperial</h1>
-        <button onClick={handleLogout} className="btn-logout">
-          Cerrar Sesión
-        </button>
-      </nav>
 
       {/* Contenido principal del Lobby */}
       <main className="dashboard-content">
