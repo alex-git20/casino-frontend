@@ -1,27 +1,23 @@
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Evita que el centrado vertical corte la parte superior */
+  overflow-y: auto;        /* Permite hacer scroll en toda la pantalla si el modal es alto */
+  padding: 2rem 1rem;      /* Espacio respirable arriba y abajo */
   z-index: 1000;
 }
 
 .modal-content {
-  background: #1e2026;
-  border: 1px solid #c5a059;
-  border-radius: 12px;
-  padding: 2.5rem;
   width: 100%;
-  max-width: 420px;
-  position: relative;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  color: #f8f9fa;
+  max-width: 460px;
+  max-height: 90vh;        /* Nunca excede el 90% de la altura visible */
+  overflow-y: auto;        /* Scroll interno limpio si el formulario crece */
+  margin: auto;            /* Centra verticalmente cuando sí cabe en pantalla */
+  padding: 1.5rem;
+  border-radius: 12px;
 }
 
 .btn-close {
