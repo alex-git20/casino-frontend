@@ -1,8 +1,11 @@
-// Header.jsx
+import { useAuthStore } from '../store/useAuthStore';
+import { Link } from 'react-router-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWallet } from '../context/WalletContext';
 
 const Header = () => {
+
+  const { user } = useAuthStore();
   const { balances, isLoading } = useWallet();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,6 +40,15 @@ const Header = () => {
             {isLoading ? '...' : `$${Number(balances?.real || 0).toFixed(2)}`}
           </span>
         </div>
+
+        {(user?.rol_nombre === 'admin' || user?.id_rol === 1) && (
+          <Link 
+            to="/admin" 
+            className="bg-yellow-600 hover:bg-yellow-500 text-gray-900 font-bold px-4 py-2 rounded-lg transition-colors"
+          >
+            Panel Admin
+          </Link>
+        )}
 
         {/* Botón dinámico: "Lobby" si estás en Ruleta/Wallet, o "Cerrar Sesión" si estás en el Dashboard */}
         {!isLobby ? (

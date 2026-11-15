@@ -1,10 +1,29 @@
 import { create } from 'zustand';
-import api from '../api/axios'; // Tu instancia de Axios configurada
+import api from '../api/axios';
+
+// Función para decodificar el JWT sin necesidad de instalar librerías extra
+const decodeToken = (token) => {
+  try {
+    const payload = token.split('.')[1];
+    // Decodificación segura en base64 para evitar errores con caracteres especiales
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    return null;
+  }
+};
+
+// Inicialización segura
+const initialToken = localStorage.getItem('token');
+const initialUser = initialToken ? decodeToken(initialToken) : null;
 
 export const useAuthStore = create((set) => ({
-  // Estado inicial leyendo lo que haya en localStorage
-  token: localStorage.getItem('token') || null,
-  isAuthenticated: !!localStorage.getItem('token'),
+  token: initialToken || null,
+  user: initialUser, // <-- AQUÍ YA TENEMOS AL USUARIO CON SU ROL
+  isAuthenticated: !!initialToken,
   isLoading: false,
   error: null,
 
@@ -12,32 +31,23 @@ export const useAuthStore = create((set) => ({
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
-      // 1. Petición POST exacta a la ruta que armó el backend
       const response = await api.post('/api/auth/login', { email, password });
-      
-      // 2. Extraer el token de la respuesta exitosa
       const { token } = response.data;
       
-      // 3. Guardar en localStorage para persistir la sesión
       localStorage.setItem('token', token);
       
-      // 4. Actualizar el estado global
+      const decodedUser = decodeToken(token); // Decodificamos el nuevo token
+      
       set({ 
         token, 
+        user: decodedUser, // Actualizamos el usuario
         isAuthenticated: true, 
         isLoading: false 
       });
 
     } catch (error) {
-      // Leer exactamente la estructura de error anidada de tu backend
       const errorMsg = error.response?.data?.error?.message || 'Error al conectar con el servidor';
-      
-      set({ 
-        error: errorMsg, 
-        isLoading: false, 
-        isAuthenticated: false 
-      });
-      
+      set({ error: errorMsg, isLoading: false, isAuthenticated: false });
       throw new Error(errorMsg);
     }
   },
@@ -46,11 +56,9 @@ export const useAuthStore = create((set) => ({
   register: async (userData) => {
     set({ isLoading: true, error: null });
     try {
-      // userData trae: username, email, password, fecha_nacimiento
       const response = await api.post('/api/auth/register', userData);
       set({ isLoading: false });
-      
-      return response.data; // Devuelve { success, data: { usuario, billetera } }
+      return response.data; 
     } catch (error) {
       const errorMsg = error.response?.data?.error?.message || 'Error en el registro';
       set({ error: errorMsg, isLoading: false });
@@ -63,6 +71,7 @@ export const useAuthStore = create((set) => ({
     localStorage.removeItem('token');
     set({ 
       token: null, 
+      user: null, // Limpiamos el usuario
       isAuthenticated: false,
       error: null
     });

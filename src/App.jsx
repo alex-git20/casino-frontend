@@ -38,11 +38,15 @@ function App() {
         {/* RUTAS PRIVADAS (Protegidas por el JWT) */}
         <Route element={<PrivateRoutes />}>
           
-          {/* Layout Privado que provee el saldo y el Navbar superior */}
+          {/* Rutas Privadas Generales (Jugadores y Admins) */}
           <Route element={<PrivateLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/roulette" element={<Roulette />} />
             <Route path="/wallet" element={<Wallet />} />
+          </Route>
+
+          {/* Rutas Privadas EXCLUSIVAS para Administradores */}
+          <Route element={<PrivateRoutes requireAdmin={true} />}>
             <Route path="/admin" element={<AdminPanel />} />
           </Route>
           
