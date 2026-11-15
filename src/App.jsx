@@ -7,6 +7,7 @@ import PrivateRoutes from './components/PrivateRoutes';
 import Dashboard from './pages/Dashboard';
 import Roulette from './pages/Roulette';
 import Wallet from './pages/Wallet';
+import AdminPanel from './pages/AdminPanel';
 
 // Importe del Contexto y el Header
 import { WalletProvider } from './context/WalletContext';
@@ -42,6 +43,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/roulette" element={<Roulette />} />
             <Route path="/wallet" element={<Wallet />} />
+            <Route path="/admin" element={<AdminPanel />} />
           </Route>
           
         </Route>

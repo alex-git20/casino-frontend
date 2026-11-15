@@ -16,6 +16,13 @@ const Login = () => {
       await login(email, password);
       navigate('/dashboard'); 
     } catch (err) {
+      // 1. Imprimimos el error real en la consola para verlo
+      console.error("Error capturado en el login:", err);
+      
+      // 2. Si el error viene de Axios, suele estar en err.response.data
+      const serverMessage = err.response?.data?.error?.message || err.message;
+      console.log("Mensaje del servidor:", serverMessage);
+
       setPassword(''); // Limpiamos el campo por seguridad tras un fallo
     }
   };
