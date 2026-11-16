@@ -328,6 +328,7 @@ const handleTxFilterSubmit = (e) => {
                     <tr className="bg-[#1f222a] border-b border-gray-700 text-xs uppercase text-gray-400">
                       <th className="p-4">Fecha</th>
                       <th className="p-4">Jugador</th>
+                      <th className="p-4">Cuenta de Destino</th>
                       <th className="p-4 text-right">Monto</th>
                       <th className="p-4 text-center">Acciones</th>
                     </tr>
@@ -344,6 +345,28 @@ const handleTxFilterSubmit = (e) => {
                           <td className="p-4">
                             <div className="font-bold">{tx.username}</div>
                             <div className="text-xs text-gray-500">{tx.email}</div>
+                          </td>
+                          <td className="p-4">
+                            {tx.cuenta_destino ? (
+                              <div className="flex items-center space-x-2">
+                                <span className="font-mono text-xs bg-gray-800 border border-gray-700 px-2.5 py-1 rounded text-gray-200">
+                                  {tx.cuenta_destino}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(tx.cuenta_destino);
+                                    alert('Cuenta copiada al portapapeles');
+                                  }}
+                                  className="text-xs text-yellow-500 hover:text-yellow-400 underline"
+                                  title="Copiar cuenta"
+                                >
+                                  Copiar
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-600 italic">No especificada</span>
+                            )}
                           </td>
                           <td className="p-4 text-right font-mono text-yellow-500 font-bold">
                             ${Number(tx.monto).toFixed(2)}
