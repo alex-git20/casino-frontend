@@ -23,6 +23,27 @@ const AdminPanel = () => {
   const [txPagination, setTxPagination] = useState({ page: 1, totalPages: 1 });
   const [isTxLoading, setIsTxLoading] = useState(false);
 
+  // Estado para métricas ejecutivas
+  const [kpis, setKpis] = useState({
+    totalDepositado: 0,
+    totalRetirado: 0,
+    montoRetirosPendientes: 0,
+    conteoRetirosPendientes: 0,
+    ggr: 0,
+    usuariosActivos: 0,
+    totalUsuarios: 0
+  });
+
+  const fetchKPIs = async () => {
+    try {
+      const res = await api.get('/api/admin/kpis');
+      const payload = res.data?.data || res.data;
+      setKpis(payload);
+    } catch (err) {
+      console.error('Error al cargar KPIs:', err);
+    }
+  };
+
   // --- LÓGICA DE USUARIOS ---
   const fetchUsers = async (pageNumber = 1, searchTerm = search) => {
     setIsUsersLoading(true);
@@ -79,6 +100,10 @@ const AdminPanel = () => {
       await api.patch(`/api/admin/withdrawals/${id_transaccion}/resolve`, { accion });
       // Removemos la transacción de la lista al procesarla
       setWithdrawals(withdrawals.filter(w => w.id_transaccion !== id_transaccion));
+
+      // LLAMAS A fetchKPIs() PARA REFRESCAR LAS TARJETAS
+      fetchKPIs();
+
       alert(`Retiro ${accion === 'aprobar' ? 'aprobado' : 'rechazado'} con éxito.`);
     } catch (err) {
       const errorMsg = err.response?.data?.error?.message || 'Error procesando el retiro.';
@@ -86,6 +111,7 @@ const AdminPanel = () => {
     }
   };
 
+  // --- LÓGICA DE HISTORIAL GLOBAL ---
   const fetchTransactions = async (pageNumber = 1, currentFilters = txFilters) => {
   setIsTxLoading(true);
   setError('');
@@ -116,6 +142,10 @@ const handleTxFilterSubmit = (e) => {
 
   // --- EFECTOS ---
   useEffect(() => {
+    fetchKPIs();
+  }, []);
+  
+  useEffect(() => {
   if (activeTab === 'usuarios') {
     fetchUsers(1, search);
   } else if (activeTab === 'retiros') {
@@ -134,6 +164,63 @@ const handleTxFilterSubmit = (e) => {
           <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-6">
             Panel de Administración
           </h1>
+
+          {/* ================= TARJETAS KPI EJECUTIVAS ================= */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            
+            {/* Tarjeta 1: Total Depositado */}
+            <div className="bg-[#16181d] border border-gray-800 rounded-xl p-5 shadow-lg">
+              <div className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">
+                Total Depositado
+              </div>
+              <div className="text-2xl font-mono font-black text-emerald-400">
+                ${Number(kpis.totalDepositado).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                Ingresos confirmados vía pasarela
+              </div>
+            </div>
+
+            {/* Tarjeta 2: Total Retirado + Pendientes */}
+            <div className="bg-[#16181d] border border-gray-800 rounded-xl p-5 shadow-lg">
+              <div className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">
+                Total Retirado
+              </div>
+              <div className="text-2xl font-mono font-black text-rose-400">
+                ${Number(kpis.totalRetirado).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className="text-xs text-yellow-500 mt-2 font-medium">
+                {kpis.conteoRetirosPendientes} pendientes (${Number(kpis.montoRetirosPendientes).toFixed(2)})
+              </div>
+            </div>
+
+            {/* Tarjeta 3: Ganancia Neta (GGR) */}
+            <div className="bg-[#16181d] border border-gray-800 rounded-xl p-5 shadow-lg">
+              <div className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">
+                Ganancia Casa (GGR)
+              </div>
+              <div className={`text-2xl font-mono font-black ${kpis.ggr >= 0 ? 'text-yellow-400' : 'text-red-400'}`}>
+                {kpis.ggr >= 0 ? '+' : '-'}${Math.abs(Number(kpis.ggr)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                Apuestas menos premios pagados
+              </div>
+            </div>
+
+            {/* Tarjeta 4: Jugadores Activos */}
+            <div className="bg-[#16181d] border border-gray-800 rounded-xl p-5 shadow-lg">
+              <div className="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">
+                Jugadores Activos
+              </div>
+              <div className="text-2xl font-mono font-black text-blue-400">
+                {kpis.usuariosActivos} <span className="text-sm font-normal text-gray-500">/ {kpis.totalUsuarios}</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                Cuentas habilitadas en plataforma
+              </div>
+            </div>
+
+          </div>
           
           {/* Navegación por Pestañas */}
           <div className="flex space-x-4 border-b border-gray-800 pb-2">
